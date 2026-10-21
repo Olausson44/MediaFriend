@@ -12,9 +12,9 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
-import { api, ClubProfile } from "../lib/api.js";
+import { api, ClubProfile } from "../lib/api";
 
 const PRESET_COLORS = [
   { name: "Röd", hex: "#dc2626" },

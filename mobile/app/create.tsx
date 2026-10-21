@@ -13,12 +13,12 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
 import * as Sharing from "expo-sharing";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
-import { api, Match, PosterTheme } from "../lib/api.js";
+import { api, Match, PosterTheme } from "../lib/api";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 

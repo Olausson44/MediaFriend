@@ -11,8 +11,8 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Ionicons } from "@expo/vector-icons";
-import { api, Match } from "../lib/api.js";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { api, Match } from "../lib/api";
 
 export default function HomeScreen() {
   const router = useRouter();
