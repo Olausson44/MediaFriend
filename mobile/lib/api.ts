@@ -49,6 +49,7 @@ export interface PosterTheme {
 export interface ClubProfile {
   id?: string;
   clubName: string;
+  teamName?: string;
   defaultVenue?: string;
   primaryColor: string;
   secondaryColor: string;

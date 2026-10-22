@@ -86,15 +86,15 @@ posterRoutes.get("/club-profile", (c) => {
 
 posterRoutes.post("/club-profile", async (c) => {
   const body = await c.req.json();
-  const { clubName, defaultVenue, primaryColor, secondaryColor, logoUrl, userId } = body;
+  const { clubName, teamName, defaultVenue, primaryColor, secondaryColor, logoUrl, userId } = body;
 
   const id = randomUUID();
   const now = new Date().toISOString();
 
   dbInstance.prepare(`
-    INSERT INTO club_profiles (id, userId, clubName, defaultVenue, primaryColor, secondaryColor, logoUrl, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, userId || "default_user", clubName, defaultVenue || "", primaryColor || "#0f3875", secondaryColor || "#ffd700", logoUrl || "", now);
+    INSERT INTO club_profiles (id, userId, clubName, teamName, defaultVenue, primaryColor, secondaryColor, logoUrl, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId || "default_user", clubName, teamName || "Alla lag", defaultVenue || "", primaryColor || "#0f3875", secondaryColor || "#ffd700", logoUrl || "", now);
 
   return c.json({ success: true, id });
 });

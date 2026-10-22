@@ -18,7 +18,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"matches" | "weekend">("matches");
 
-  // Hämta matcher via React Query
+  // Hämta matcher
   const {
     data: matches,
     isLoading,
@@ -35,13 +35,12 @@ export default function HomeScreen() {
     queryFn: () => api.getClubProfile(),
   });
 
-  // Hämta AI status (ComfyUI)
-  const { data: aiStatus } = useQuery({
-    queryKey: ["aiStatus"],
-    queryFn: () => api.getAiStatus(),
-  });
-
   const clubName = clubProfile?.clubName || "Pixbo IBK";
+  const teamName = clubProfile?.teamName || "Herr A";
+  const clubLogo = clubProfile?.logoUrl || "https://stats.innebandy.se/content/logos/101.png";
+
+  const nextMatch = matches?.[0];
+  const upcomingMatches = matches?.slice(1) || [];
 
   const formatDate = (isoString: string) => {
     const d = new Date(isoString);
@@ -56,151 +55,162 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#38bdf8" />}
     >
-      {/* Klubb-header */}
-      <View style={styles.clubCard}>
-        <View style={styles.clubInfo}>
-          {clubProfile?.logoUrl ? (
-            <Image source={{ uri: clubProfile.logoUrl }} style={styles.clubLogo} />
+      {/* Ren toppbar: Klubb & Lag */}
+      <View style={styles.topBar}>
+        <View style={styles.clubHeader}>
+          {clubLogo ? (
+            <Image source={{ uri: clubLogo }} style={styles.clubLogo} />
           ) : (
-            <View style={styles.clubLogoPlaceholder}>
-              <Ionicons name="shield" size={28} color="#38bdf8" />
+            <View style={styles.clubLogoFallback}>
+              <Ionicons name="shield" size={24} color="#38bdf8" />
             </View>
           )}
-          <View style={styles.clubTextContainer}>
-            <Text style={styles.clubLabel}>Aktiv förening</Text>
-            <Text style={styles.clubTitle}>{clubName}</Text>
+          <View>
+            <Text style={styles.clubNameText}>{clubName}</Text>
+            <Text style={styles.teamNameText}>{teamName}</Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.settingsButton} onPress={() => router.push("/club")}>
-          <Ionicons name="settings-outline" size={20} color="#94a3b8" />
+        <TouchableOpacity style={styles.settingsIconBtn} onPress={() => router.push("/club")}>
+          <Ionicons name="options-outline" size={20} color="#94a3b8" />
         </TouchableOpacity>
       </View>
 
-      {/* AI Server Statusindikator */}
-      <View style={[styles.statusBadge, aiStatus?.online ? styles.statusOnline : styles.statusOffline]}>
-        <Ionicons
-          name={aiStatus?.online ? "hardware-chip" : "cloud-offline-outline"}
-          size={16}
-          color={aiStatus?.online ? "#4ade80" : "#f59e0b"}
-        />
-        <Text style={[styles.statusText, { color: aiStatus?.online ? "#4ade80" : "#f59e0b" }]}>
-          {aiStatus?.online ? "Pinokio ComfyUI Ansluten" : "Lokal HD-grafikmotor aktiv"}
-        </Text>
-      </View>
-
-      {/* Flikar */}
-      <View style={styles.tabContainer}>
+      {/* Flikar: Nästa match vs Helgens översikt */}
+      <View style={styles.tabRow}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === "matches" && styles.activeTab]}
+          style={[styles.tabButton, activeTab === "matches" && styles.activeTabButton]}
           onPress={() => setActiveTab("matches")}
         >
-          <Ionicons
-            name="flash-outline"
-            size={18}
-            color={activeTab === "matches" ? "#ffffff" : "#94a3b8"}
-          />
-          <Text style={[styles.tabText, activeTab === "matches" && styles.activeTabText]}>
+          <Text style={[styles.tabButtonText, activeTab === "matches" && styles.activeTabButtonText]}>
             Kommande Matcher
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tab, activeTab === "weekend" && styles.activeTab]}
+          style={[styles.tabButton, activeTab === "weekend" && styles.activeTabButton]}
           onPress={() => setActiveTab("weekend")}
         >
-          <Ionicons
-            name="calendar-outline"
-            size={18}
-            color={activeTab === "weekend" ? "#ffffff" : "#94a3b8"}
-          />
-          <Text style={[styles.tabText, activeTab === "weekend" && styles.activeTabText]}>
+          <Text style={[styles.tabButtonText, activeTab === "weekend" && styles.activeTabButtonText]}>
             Helgens Översikt
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Laddningsindikator */}
       {isLoading ? (
-        <View style={styles.loadingContainer}>
+        <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color="#38bdf8" />
-          <Text style={styles.loadingText}>Hämtar matcher från iBIS...</Text>
         </View>
       ) : activeTab === "matches" ? (
-        /* Matchlista */
-        <View style={styles.matchList}>
-          {matches?.map((match) => (
-            <View key={match.MatchID} style={styles.matchCard}>
-              <View style={styles.matchHeader}>
-                <Text style={styles.competitionName}>{match.CompetitionName}</Text>
-                <Text style={styles.matchDate}>{formatDate(match.MatchDateTime)}</Text>
+        <View style={styles.matchesContainer}>
+          {/* NÄSTA MATCH - HERO KORT */}
+          {nextMatch && (
+            <View style={styles.heroMatchCard}>
+              <View style={styles.heroBadgeRow}>
+                <Text style={styles.nextMatchTag}>NÄSTA HEMMAMATCH</Text>
+                <Text style={styles.heroDate}>{formatDate(nextMatch.MatchDateTime)}</Text>
               </View>
 
-              <View style={styles.teamsRow}>
+              <View style={styles.heroTeamsRow}>
                 {/* Hemmalag */}
-                <View style={styles.teamColumn}>
-                  {match.HomeTeamLogotypeUrl ? (
-                    <Image source={{ uri: match.HomeTeamLogotypeUrl }} style={styles.teamLogo} />
+                <View style={styles.heroTeamCol}>
+                  {nextMatch.HomeTeamLogotypeUrl || clubLogo ? (
+                    <Image
+                      source={{ uri: nextMatch.HomeTeamLogotypeUrl || clubLogo }}
+                      style={styles.heroTeamLogo}
+                    />
                   ) : (
-                    <View style={styles.teamLogoPlaceholder}>
-                      <Text style={styles.teamInitials}>{match.HomeTeamShortName || "HEM"}</Text>
+                    <View style={styles.heroLogoPlaceholder}>
+                      <Text style={styles.heroTeamInitials}>HEM</Text>
                     </View>
                   )}
-                  <Text style={styles.teamName} numberOfLines={1}>
-                    {match.HomeTeam}
+                  <Text style={styles.heroTeamName} numberOfLines={1}>
+                    {nextMatch.HomeTeam}
                   </Text>
                 </View>
 
-                {/* VS Badge */}
-                <View style={styles.vsContainer}>
-                  <Text style={styles.vsText}>VS</Text>
-                  <Text style={styles.venueText} numberOfLines={1}>
-                    {match.Venue || "Hemmahall"}
+                {/* VS */}
+                <View style={styles.heroVsCol}>
+                  <Text style={styles.heroVsText}>VS</Text>
+                  <Text style={styles.heroVenueText} numberOfLines={1}>
+                    {nextMatch.Venue || "Hemmahall"}
                   </Text>
                 </View>
 
                 {/* Bortalag */}
-                <View style={styles.teamColumn}>
-                  {match.AwayTeamLogotypeUrl ? (
-                    <Image source={{ uri: match.AwayTeamLogotypeUrl }} style={styles.teamLogo} />
+                <View style={styles.heroTeamCol}>
+                  {nextMatch.AwayTeamLogotypeUrl ? (
+                    <Image source={{ uri: nextMatch.AwayTeamLogotypeUrl }} style={styles.heroTeamLogo} />
                   ) : (
-                    <View style={styles.teamLogoPlaceholder}>
-                      <Text style={styles.teamInitials}>{match.AwayTeamShortName || "BOR"}</Text>
+                    <View style={styles.heroLogoPlaceholder}>
+                      <Text style={styles.heroTeamInitials}>BOR</Text>
                     </View>
                   )}
-                  <Text style={styles.teamName} numberOfLines={1}>
-                    {match.AwayTeam}
+                  <Text style={styles.heroTeamName} numberOfLines={1}>
+                    {nextMatch.AwayTeam}
                   </Text>
                 </View>
               </View>
 
-              {/* Actionknapp */}
+              {/* Stor tydlig action-knapp */}
               <TouchableOpacity
-                style={styles.createButton}
+                style={styles.heroActionBtn}
                 onPress={() =>
                   router.push({
                     pathname: "/create",
-                    params: { matchId: match.MatchID },
+                    params: { matchId: nextMatch.MatchID },
                   })
                 }
               >
-                <Ionicons name="sparkles" size={18} color="#ffffff" />
-                <Text style={styles.createButtonText}>Skapa Matchplansch</Text>
+                <Ionicons name="sparkles" size={20} color="#ffffff" />
+                <Text style={styles.heroActionBtnText}>Skapa Matchplansch</Text>
               </TouchableOpacity>
             </View>
-          ))}
+          )}
+
+          {/* FLER MATCHER */}
+          {upcomingMatches.length > 0 && (
+            <View style={styles.moreMatchesSection}>
+              <Text style={styles.sectionHeaderTitle}>Kommande matcher</Text>
+
+              {upcomingMatches.map((m) => (
+                <TouchableOpacity
+                  key={m.MatchID}
+                  style={styles.compactMatchCard}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/create",
+                      params: { matchId: m.MatchID },
+                    })
+                  }
+                >
+                  <View style={styles.compactInfo}>
+                    <Text style={styles.compactDate}>{formatDate(m.MatchDateTime)}</Text>
+                    <Text style={styles.compactMatchup}>
+                      {m.HomeTeam} <Text style={{ color: "#ef4444" }}>vs</Text> {m.AwayTeam}
+                    </Text>
+                    <Text style={styles.compactVenue}>{m.Venue || "Hemmahall"}</Text>
+                  </View>
+
+                  <View style={styles.compactArrowBtn}>
+                    <Ionicons name="arrow-forward" size={18} color="#38bdf8" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       ) : (
-        /* Helgens hemmamatcher sammanställning */
-        <View style={styles.weekendCard}>
-          <Ionicons name="calendar" size={36} color="#38bdf8" />
-          <Text style={styles.weekendTitle}>Helgens Hemmamatcher</Text>
-          <Text style={styles.weekendSubtitle}>
-            Skapa ett samlat inlägg eller en Instagram-karusell med helgens {matches?.length || 0} hemmamatcher!
+        /* HELGENS ÖVERSIKT */
+        <View style={styles.weekendBox}>
+          <Ionicons name="calendar-outline" size={40} color="#38bdf8" />
+          <Text style={styles.weekendTitle}>Helgens Matcher</Text>
+          <Text style={styles.weekendDesc}>
+            Skapa ett samlat inlägg för helgens alla {matches?.length || 0} hemmamatcher i hallen!
           </Text>
 
           <TouchableOpacity
-            style={styles.createButton}
+            style={styles.heroActionBtn}
             onPress={() =>
               router.push({
                 pathname: "/create",
@@ -208,8 +218,8 @@ export default function HomeScreen() {
               })
             }
           >
-            <Ionicons name="albums-outline" size={18} color="#ffffff" />
-            <Text style={styles.createButtonText}>Skapa Helgöversikt</Text>
+            <Ionicons name="images-outline" size={20} color="#ffffff" />
+            <Text style={styles.heroActionBtnText}>Skapa Helgöversikt</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -225,19 +235,15 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 40,
+    gap: 16,
   },
-  clubCard: {
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#131b2e",
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#1e293b",
-    marginBottom: 12,
+    paddingVertical: 4,
   },
-  clubInfo: {
+  clubHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -247,206 +253,218 @@ const styles = StyleSheet.create({
     height: 44,
     resizeMode: "contain",
   },
-  clubLogoPlaceholder: {
+  clubLogoFallback: {
     width: 44,
     height: 44,
-    borderRadius: 12,
-    backgroundColor: "#1e293b",
+    borderRadius: 22,
+    backgroundColor: "#131b2e",
     alignItems: "center",
     justifyContent: "center",
   },
-  clubTextContainer: {
-    gap: 2,
-  },
-  clubLabel: {
-    fontSize: 12,
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  clubTitle: {
+  clubNameText: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "800",
     color: "#ffffff",
+    letterSpacing: 0.3,
   },
-  settingsButton: {
-    padding: 8,
-    borderRadius: 10,
-    backgroundColor: "#1e293b",
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-  },
-  statusOnline: {
-    backgroundColor: "rgba(34, 197, 94, 0.1)",
-    borderColor: "rgba(34, 197, 94, 0.2)",
-  },
-  statusOffline: {
-    backgroundColor: "rgba(245, 158, 11, 0.1)",
-    borderColor: "rgba(245, 158, 11, 0.2)",
-  },
-  statusText: {
+  teamNameText: {
     fontSize: 13,
+    color: "#38bdf8",
     fontWeight: "600",
   },
-  tabContainer: {
+  settingsIconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#131b2e",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#1e293b",
+  },
+  tabRow: {
     flexDirection: "row",
     backgroundColor: "#131b2e",
     borderRadius: 12,
     padding: 4,
-    marginBottom: 16,
   },
-  tab: {
+  tabButton: {
     flex: 1,
-    flexDirection: "row",
+    paddingVertical: 9,
     alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
     borderRadius: 8,
   },
-  activeTab: {
+  activeTabButton: {
     backgroundColor: "#2563eb",
   },
-  tabText: {
-    fontSize: 14,
-    fontWeight: "600",
+  tabButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
     color: "#94a3b8",
   },
-  activeTabText: {
+  activeTabButtonText: {
     color: "#ffffff",
   },
-  loadingContainer: {
+  loadingBox: {
+    paddingVertical: 50,
     alignItems: "center",
-    justifyContent: "center",
-    padding: 40,
-    gap: 12,
   },
-  loadingText: {
-    color: "#94a3b8",
-    fontSize: 14,
+  matchesContainer: {
+    gap: 16,
   },
-  matchList: {
-    gap: 14,
-  },
-  matchCard: {
+  heroMatchCard: {
     backgroundColor: "#131b2e",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1.5,
     borderColor: "#1e293b",
+    gap: 16,
   },
-  matchHeader: {
+  heroBadgeRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1e293b",
+    justifyContent: "space-between",
   },
-  competitionName: {
+  nextMatchTag: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#38bdf8",
+    letterSpacing: 1,
+  },
+  heroDate: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#38bdf8",
-    textTransform: "uppercase",
-  },
-  matchDate: {
-    fontSize: 12,
-    fontWeight: "600",
     color: "#94a3b8",
   },
-  teamsRow: {
+  heroTeamsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    paddingVertical: 4,
   },
-  teamColumn: {
+  heroTeamCol: {
     flex: 1,
     alignItems: "center",
     gap: 8,
   },
-  teamLogo: {
-    width: 52,
-    height: 52,
+  heroTeamLogo: {
+    width: 58,
+    height: 58,
     resizeMode: "contain",
   },
-  teamLogoPlaceholder: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  heroLogoPlaceholder: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: "#1e293b",
     alignItems: "center",
     justifyContent: "center",
   },
-  teamInitials: {
+  heroTeamInitials: {
     color: "#ffffff",
     fontWeight: "bold",
     fontSize: 14,
   },
-  teamName: {
-    fontSize: 14,
+  heroTeamName: {
+    fontSize: 15,
     fontWeight: "700",
     color: "#ffffff",
     textAlign: "center",
   },
-  vsContainer: {
+  heroVsCol: {
     alignItems: "center",
-    paddingHorizontal: 8,
     gap: 4,
+    paddingHorizontal: 8,
   },
-  vsText: {
-    fontSize: 14,
+  heroVsText: {
+    fontSize: 16,
     fontWeight: "900",
     color: "#ef4444",
   },
-  venueText: {
+  heroVenueText: {
     fontSize: 11,
     color: "#64748b",
     maxWidth: 90,
     textAlign: "center",
   },
-  createButton: {
+  heroActionBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     backgroundColor: "#2563eb",
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
   },
-  createButtonText: {
+  heroActionBtnText: {
     color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "bold",
   },
-  weekendCard: {
+  moreMatchesSection: {
+    gap: 10,
+    marginTop: 4,
+  },
+  sectionHeaderTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  compactMatchCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#131b2e",
-    borderRadius: 16,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#1e293b",
+  },
+  compactInfo: {
+    gap: 4,
+    flex: 1,
+  },
+  compactDate: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#38bdf8",
+  },
+  compactMatchup: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+  compactVenue: {
+    fontSize: 12,
+    color: "#64748b",
+  },
+  compactArrowBtn: {
+    padding: 8,
+    borderRadius: 10,
+    backgroundColor: "#1e293b",
+  },
+  weekendBox: {
+    backgroundColor: "#131b2e",
+    borderRadius: 20,
     padding: 24,
     alignItems: "center",
     gap: 12,
     borderWidth: 1,
     borderColor: "#1e293b",
+    marginTop: 8,
   },
   weekendTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "800",
     color: "#ffffff",
   },
-  weekendSubtitle: {
-    fontSize: 14,
+  weekendDesc: {
+    fontSize: 13,
     color: "#94a3b8",
     textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 8,
+    lineHeight: 18,
+    marginBottom: 4,
   },
 });

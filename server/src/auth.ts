@@ -62,6 +62,7 @@ db.exec(`
     id TEXT PRIMARY KEY,
     userId TEXT,
     clubName TEXT NOT NULL,
+    teamName TEXT DEFAULT 'Alla lag',
     defaultVenue TEXT,
     primaryColor TEXT DEFAULT '#0f3875',
     secondaryColor TEXT DEFAULT '#ffd700',
@@ -83,6 +84,10 @@ db.exec(`
     createdAt TEXT
   );
 `);
+
+try {
+  db.exec("ALTER TABLE club_profiles ADD COLUMN teamName TEXT DEFAULT 'Alla lag'");
+} catch {}
 
 export const dbInstance = db;
 
